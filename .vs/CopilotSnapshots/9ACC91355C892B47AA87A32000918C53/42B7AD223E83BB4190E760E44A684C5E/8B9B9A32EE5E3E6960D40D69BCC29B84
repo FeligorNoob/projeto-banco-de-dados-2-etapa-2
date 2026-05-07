@@ -1,0 +1,95 @@
+﻿using Microsoft.Extensions.Configuration;
+using BarberApplication.Console.Data;
+using BarberApplication.Console.Services;
+using BarberApplication.Console.Menus;
+
+namespace BarberApplication.Console;
+
+/// <summary>
+/// Classe principal que orquestra a aplicação console da barbearia.
+/// Utiliza o padrão Factory Method (IDatabaseFactory) para instanciar os services,
+/// permitindo trocar facilmente de banco de dados (ex: MySQL → MongoDB).
+/// </summary>
+public class BarberApp : ConsoleMenuBase
+{
+    private readonly IConsoleMenu _clienteConsole;
+    private readonly IConsoleMenu _profissionalConsole;
+    private readonly IConsoleMenu _administradorConsole;
+
+    private BarberApp(
+        IUsuarioService usuarioService,
+        ICargoService cargoService,
+        IEspecialidadeService especialidadeService,
+        IProfissionalEspecialidadeService profEspService,
+        IServicoService servicoService,
+        IAtendimentoService atendimentoService)
+        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
+    {
+        _clienteConsole = new ClienteConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
+        _profissionalConsole = new ProfissionalConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
+        _administradorConsole = new AdministradorConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
+    }
+
+    /// <summary>
+    /// Cria e executa a aplicação console.
+    /// Usa o Factory Method para instanciar os services de acesso ao banco.
+    /// Para trocar de banco, basta substituir MySqlDatabaseFactory por outra implementação.
+    /// </summary>
+    public static async Task RunAsync()
+    {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
+
+        // ===== FACTORY METHOD =====
+        // Para trocar de banco de dados, basta substituir esta linha:
+        //   using IDatabaseFactory factory = new MongoDatabaseFactory(connectionString);
+        using IDatabaseFactory factory = new MySqlDatabaseFactory(connectionString);
+
+        var app = new BarberApp(
+            factory.CreateUsuarioService(),
+            factory.CreateCargoService(),
+            factory.CreateEspecialidadeService(),
+            factory.CreateProfissionalEspecialidadeService(),
+            factory.CreateServicoService(),
+            factory.CreateAtendimentoService()
+        );
+
+        await app.ExibirAsync();
+    }
+
+    /// <summary>
+    /// Loop principal do menu da aplicação.
+    /// </summary>
+    public override async Task ExibirAsync()
+    {
+        while (true)
+        {
+            LimparConsole();
+            Titulo("Sistema de Agendamento para Barbearia");
+            System.Console.WriteLine("  1. Visualizar como Cliente");
+            System.Console.WriteLine("  2. Visualizar como Profissional");
+            System.Console.WriteLine("  3. Visualizar como Administrador");
+            System.Console.WriteLine("  0. Sair");
+            Separador();
+
+            var opcao = LerOpcao();
+            await ExecutarProtegidoAsync(async () =>
+            {
+                switch (opcao)
+                {
+                    case "1": await _clienteConsole.ExibirAsync(); break;
+                    case "2": await _profissionalConsole.ExibirAsync(); break;
+                    case "3": await _administradorConsole.ExibirAsync(); break;
+                    case "4": await _crudConsole.ExibirAsync(); break;
+                    case "0": return;
+                    default: MsgErro("Opção inválida!"); break;
+                }
+            });
+            if (opcao == "0") { Msg("Até logo!"); return; }
+        }
+    }
+}

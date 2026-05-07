@@ -1,0 +1,16 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BarberApplication.Console.Models;
+
+[Table("usuario_cargo")]
+public class UsuarioCargoModel
+{
+    [Key]
+    [Column("fk_usuario", Order = 0)]
+    public int FkUsuario { get; set; }
+
+    [Key]
+    [Column("fk_cargo", Order = 1)]
+    public int FkCargo { get; set; }
+}

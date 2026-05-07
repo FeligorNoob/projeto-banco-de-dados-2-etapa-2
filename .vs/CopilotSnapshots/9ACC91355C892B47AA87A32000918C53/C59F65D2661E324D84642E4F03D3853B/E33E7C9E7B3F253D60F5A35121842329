@@ -1,0 +1,18 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BarberApplication.Console.Models;
+
+[Table("cargo")]
+public class CargoModel
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [Column("id_cargo")]
+    public int IdCargo { get; set; }
+
+    [Required]
+    [StringLength(30)]
+    [Column("nome")]
+    public required string Nome { get; set; }
+}

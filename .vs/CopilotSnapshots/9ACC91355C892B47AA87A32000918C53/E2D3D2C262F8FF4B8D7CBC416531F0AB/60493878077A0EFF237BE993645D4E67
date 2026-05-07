@@ -1,0 +1,39 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BarberApplication.Console.Models;
+
+[Table("usuario")]
+public class UsuarioModel
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Column("id_usuario")]
+    public int IdUsuario { get; set; }
+
+    [Required]
+    [StringLength(11)]
+    [Column("cpf")]
+    public required string Cpf { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    [Column("nome")]
+    public required string Nome { get; set; }
+
+    [StringLength(15)]
+    [Column("telefone")]
+    public string? Telefone { get; set; }
+
+    [StringLength(100)]
+    [Column("end_rua")]
+    public string? EndRua { get; set; }
+
+    [StringLength(50)]
+    [Column("end_bairro")]
+    public string? EndBairro { get; set; }
+
+    [StringLength(8)]
+    [Column("end_cep")]
+    public string? EndCep { get; set; }
+}

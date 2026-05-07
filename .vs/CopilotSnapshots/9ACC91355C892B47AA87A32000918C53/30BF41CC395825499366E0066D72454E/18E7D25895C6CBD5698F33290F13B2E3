@@ -1,0 +1,445 @@
+﻿using BarberApplication.Console.Models;
+using BarberApplication.Console.Services;
+using System;
+
+namespace BarberApplication.Console.Menus;
+
+/// <summary>
+/// Menu Consolidado para CRUDs base + Relatórios.
+/// Construido a partir do cruzamento de varias tabelas (`usuario`, `cargo`, `especialidade`, `servico`, `atendimento`) e seus relacionamentos.
+/// </summary>
+public class CentralCrudConsole : ConsoleMenuBase
+{
+	public CentralCrudConsole(
+		IUsuarioService usuarioService,
+		ICargoService cargoService,
+		IEspecialidadeService especialidadeService,
+		IProfissionalEspecialidadeService profEspService,
+		IServicoService servicoService,
+		IAtendimentoService atendimentoService)
+		: base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
+	{
+	}
+
+	public override async Task ExibirAsync()
+	{
+		while (true)
+		{
+			LimparConsole();
+			Titulo("Central de Dados (CRUD Base)");
+			System.Console.WriteLine("  Módulos Disponíveis:");
+			System.Console.WriteLine("  1.  CRUD Usuários");
+			System.Console.WriteLine("  2.  CRUD Especialidades");
+			System.Console.WriteLine("  3.  CRUD Serviços");
+			System.Console.WriteLine("  4.  Visualizar Relatórios Avançados (Admin)");
+			System.Console.WriteLine();
+			System.Console.WriteLine("  0.  Voltar");
+			Separador();
+
+			var opcao = LerOpcao();
+			await ExecutarProtegidoAsync(async () =>
+			{
+				switch (opcao)
+				{
+					case "1": await SubMenuUsuarios(); break;
+					case "2": await SubMenuEspecialidades(); break;
+					case "3": await SubMenuServicos(); break;
+					case "4": await VisualizarRelatorios(); break;
+					case "0": return;
+					default: MsgErro("Opção inválida!"); break;
+				}
+			});
+			if (opcao == "0") return;
+		}
+	}
+
+	private async Task SubMenuUsuarios()
+	{
+		while (true)
+		{
+			LimparConsole();
+			Titulo("Gestão de Usuários");
+			System.Console.WriteLine("  1. Criar");
+			System.Console.WriteLine("  2. Consultar");
+			System.Console.WriteLine("  3. Editar");
+			System.Console.WriteLine("  4. Remover");
+			System.Console.WriteLine("  0. Voltar");
+			Separador();
+
+			var opcao = LerOpcao();
+			switch (opcao)
+			{
+				case "1": await CriarUsuario(); break;
+				case "2": await VerUsuarios(); break;
+				case "3": await EditarUsuario(); break;
+				case "4": await RemoverUsuario(); break;
+				case "0": return;
+				default: MsgErro("Opção inválida!"); break;
+			}
+		}
+	}
+
+	private async Task CriarUsuario()
+	{
+		LimparConsole();
+		Titulo("Criar novo Usuário");
+
+		var cpf = LerInput("CPF (11 dígitos)");
+		if (cpf == "0") return;
+
+		var nome = LerInput("Nome completo");
+		if (nome == "0") return;
+
+		var tel = LerInput("Telefone (opcional, Enter para pular)");
+		if (tel == "0") return;
+
+		var idCargoStr = LerInput("Cargo (1=Admin, 2=Profissional, 3=Cliente)");
+		if (idCargoStr == "0") return;
+
+		if (!int.TryParse(idCargoStr, out int idCargo)) return;
+
+		try
+		{
+			await UsuarioService.CreateAsync(new UsuarioModel
+			{
+				Cpf = cpf,
+				Nome = nome,
+				Telefone = string.IsNullOrWhiteSpace(tel) ? null : tel,
+				IdCargo = idCargo
+			});
+			Msg($"Usuário criado com sucesso!");
+		}
+		catch (ArgumentException ex)
+		{
+			MsgErro(ex.Message);
+		}
+	}
+
+	private async Task VerUsuarios()
+	{
+		LimparConsole();
+		Titulo("Todos os Usuários");
+
+		var usuarios = (await UsuarioService.GetAllAsync()).ToList();
+
+		if (usuarios.Count == 0) { Msg("Nenhum usuário cadastrado."); return; }
+
+		System.Console.WriteLine($"  {"ID",-5} {"Nome",-30} {"CPF",-15} {"Cargo"}");
+		Separador();
+		foreach (var c in usuarios)
+			System.Console.WriteLine($"  {c.IdUsuario,-5} {c.Nome,-30} {c.Cpf,-15} {c.IdCargo}");
+		Pausar();
+	}
+
+	private async Task EditarUsuario()
+	{
+		LimparConsole();
+		Titulo("Editar Usuário");
+		var usuarios = (await UsuarioService.GetAllAsync()).OrderBy(u => u.IdUsuario).ToList();
+		if (usuarios.Count == 0) { Msg("Nenhum usuário cadastrado."); return; }
+
+		foreach (var c in usuarios)
+			System.Console.WriteLine($"  [{c.IdUsuario}] {c.Nome} (CPF: {c.Cpf})");
+
+		var inId = LerInput("Digite o ID do usuário para editar");
+		if (inId == "0") return;
+
+		if (!int.TryParse(inId, out int idUsuario)) return;
+
+		var usuario = await UsuarioService.GetByIdAsync(idUsuario);
+		if (usuario == null) { MsgErro("Não encontrado!"); return; }
+
+		var nome = LerInputEdicao($"Novo Nome [{usuario.Nome}]");
+		if (nome != "0" && !string.IsNullOrWhiteSpace(nome)) usuario.Nome = nome;
+
+		var tel = LerInputEdicao($"Novo Telefone [{usuario.Telefone}]");
+		if (tel != "0" && !string.IsNullOrWhiteSpace(tel)) usuario.Telefone = tel;
+
+		await UsuarioService.UpdateAsync(idUsuario, usuario);
+		Msg("Usuário editado com sucesso!");
+	}
+
+	private async Task RemoverUsuario()
+	{
+		LimparConsole();
+		Titulo("Remover Usuário");
+		var usuarios = (await UsuarioService.GetAllAsync()).OrderBy(u => u.IdUsuario).ToList();
+		if (usuarios.Count == 0) { Msg("Nenhum usuário cadastrado."); return; }
+
+		foreach (var c in usuarios)
+			System.Console.WriteLine($"  [{c.IdUsuario}] {c.Nome} (CPF: {c.Cpf})");
+
+		var inId = LerInput("Digite o ID do usuário para remover");
+		if (inId == "0") return;
+
+		if (!int.TryParse(inId, out int idUsuario)) return;
+
+		try 
+		{
+			var ok = await UsuarioService.DeleteAsync(idUsuario);
+			if (ok) Msg("Usuário removido com sucesso!"); else MsgErro("Erro ao remover usuário (pode haver dependências).");
+		}
+		catch (Exception)
+		{
+			MsgErro("Usuário possui dependências como Agendamentos ou Vínculos no banco de dados e não pode ser removido!");
+		}
+	}
+
+	private async Task SubMenuEspecialidades()
+	{
+		 while (true)
+		{
+			LimparConsole();
+			Titulo("Gestão de Especialidades");
+			System.Console.WriteLine("  1. Criar");
+			System.Console.WriteLine("  2. Consultar");
+			System.Console.WriteLine("  3. Editar");
+			System.Console.WriteLine("  4. Remover");
+			System.Console.WriteLine("  0. Voltar");
+			Separador();
+
+			var opcao = LerOpcao();
+			switch (opcao)
+			{
+				case "1": await CriarEspecialidade(); break;
+				case "2": await VerEspecialidades(); break;
+				case "3": await EditarEspecialidade(); break;
+				case "4": await RemoverEspecialidade(); break;
+				case "0": return;
+				default: MsgErro("Opção inválida!"); break;
+			}
+		}
+	}
+
+	private async Task CriarEspecialidade()
+	{
+		LimparConsole();
+		Titulo("Criar Especialidade");
+		var nome = LerInput("Nome da Especialidade");
+		if (string.IsNullOrWhiteSpace(nome) || nome == "0") return;
+		await EspecialidadeService.CreateAsync(new EspecialidadeModel { Nome = nome });
+		Msg("Criado!");
+	}
+
+	private async Task VerEspecialidades()
+	{
+		LimparConsole();
+		Titulo("Especialidades");
+		var esps = await EspecialidadeService.GetAllAsync();
+		foreach(var e in esps) System.Console.WriteLine($"  [{e.IdEspecialidade}] {e.Nome}");
+		Pausar();
+	}
+
+	private async Task EditarEspecialidade()
+	{
+		LimparConsole();
+		Titulo("Editar Especialidade");
+		var esps = (await EspecialidadeService.GetAllAsync()).OrderBy(e => e.IdEspecialidade).ToList();
+		foreach(var e in esps) System.Console.WriteLine($"  [{e.IdEspecialidade}] {e.Nome}");
+
+		var inId = LerInput("ID da especialidade");
+		if (inId == "0" || !int.TryParse(inId, out int id)) return;
+		var esp = await EspecialidadeService.GetByIdAsync(id);
+		if (esp == null) return;
+		var nome = LerInputEdicao($"Novo Nome [{esp.Nome}]");
+		if (nome != "0" && !string.IsNullOrWhiteSpace(nome)) {
+			esp.Nome = nome;
+			await EspecialidadeService.UpdateAsync(id, esp);
+			Msg("Atualizado!");
+		}
+	}
+
+	private async Task RemoverEspecialidade()
+	{
+		LimparConsole();
+		Titulo("Remover Especialidade");
+		var esps = await EspecialidadeService.GetAllAsync();
+		foreach(var e in esps) System.Console.WriteLine($"  [{e.IdEspecialidade}] {e.Nome}");
+
+		var inId = LerInput("ID da especialidade para remover");
+		if (inId == "0" || !int.TryParse(inId, out int id)) return;
+		try {
+			await EspecialidadeService.DeleteAsync(id);
+			Msg("Removido!");
+		} catch { MsgErro("Impossível remover pois está amarrado a profissionais/serviços!"); }
+	}
+
+	private async Task SubMenuServicos()
+	{
+		 while (true)
+		{
+			LimparConsole();
+			Titulo("Gestão de Serviços");
+			System.Console.WriteLine("  1. Criar");
+			System.Console.WriteLine("  2. Consultar");
+			System.Console.WriteLine("  3. Editar");
+			System.Console.WriteLine("  4. Remover");
+			System.Console.WriteLine("  0. Voltar");
+			Separador();
+
+			var opcao = LerOpcao();
+			switch (opcao)
+			{
+				case "1": await CriarServico(); break;
+				case "2": await VisualizarServicos(); break;
+				case "3": await EditarServico(); break;
+				case "4": await RemoverServico(); break;
+				case "0": return;
+				default: MsgErro("Opção inválida!"); break;
+			}
+		}
+	}
+
+	private async Task CriarServico()
+	{
+		LimparConsole();
+		Titulo("Criar Serviço");
+		var nome = LerInput("Nome do serviço");
+		if (nome == "0") return;
+
+		var inPreco = LerInput("Preço (ex: 50.00)");
+		if (inPreco == "0") return;
+		if (!decimal.TryParse(inPreco.Replace('.', ','), out decimal preco)) { MsgErro("Preço inválido!"); return; }
+
+		var inDuracao = LerInput("Duração (min)");
+		if (inDuracao == "0" || !int.TryParse(inDuracao, out int duracao)) return;
+
+		await ServicoService.CreateAsync(new ServicoModel { Nome = nome, Preco = preco, DuracaoEstimada = duracao });
+		Msg("Serviço Criado!");
+	}
+
+	private async Task EditarServico()
+	{
+		LimparConsole();
+		Titulo("Editar Serviço");
+		var servicos = await ServicoService.GetAllAsync();
+		foreach(var s in servicos) System.Console.WriteLine($"  [{s.IdServico}] {s.Nome} - R${s.Preco:F2}");
+
+		var inId = LerInput("ID do Serviço");
+		if (inId == "0" || !int.TryParse(inId, out int id)) return;
+		var serv = await ServicoService.GetByIdAsync(id);
+		if (serv == null) return;
+
+		var n = LerInputEdicao($"Novo nome [{serv.Nome}]");
+		if (n != "0" && !string.IsNullOrWhiteSpace(n)) serv.Nome = n;
+
+		await ServicoService.UpdateAsync(id, serv);
+		Msg("Serviço Atualizado!");
+	}
+
+	private async Task RemoverServico()
+	{
+		LimparConsole();
+		Titulo("Remover Serviço");
+		var servicos = await ServicoService.GetAllAsync();
+		foreach(var s in servicos) System.Console.WriteLine($"  [{s.IdServico}] {s.Nome} - R${s.Preco:F2}");
+
+		var inId = LerInput("ID do Serviço");
+		if (inId == "0" || !int.TryParse(inId, out int id)) return;
+
+		try {
+			await ServicoService.DeleteAsync(id);
+			Msg("Removido com sucesso!");
+		} catch { MsgErro("Falha: Serviço pode estar ligado a um atendimento."); }
+	}
+
+	private async Task VisualizarRelatorios()
+	{
+		while(true)
+		{
+			LimparConsole();
+			Titulo("Relatórios Base Avançados (Atendimentos Cruzados)");
+			System.Console.WriteLine("  ──── Relatórios ────");
+			System.Console.WriteLine("  17. Agenda Geral Detalhada");
+			System.Console.WriteLine("  18. Faturamento Total por Barbeiro");
+			System.Console.WriteLine("  19. Serviços mais procurados por Bairro");
+			System.Console.WriteLine();
+			System.Console.WriteLine("  0.  Voltar");
+			Separador();
+
+			var opcao = LerOpcao();
+			switch (opcao)
+			{
+				case "17": await RelatorioAgendaGeral(); break;
+				case "18": await RelatorioFaturamento(); break;
+				case "19": await RelatorioServicosPorBairro(); break;
+				case "0": return;
+				default: MsgErro("Opção inválida!"); break;
+			}
+		}
+	}
+
+	private async Task RelatorioAgendaGeral()
+	{
+		LimparConsole();
+		Titulo("Relatório 1: Agenda Geral Detalhada");
+		var atendimentos = (await AtendimentoService.GetAllAsync()).Where(a => a.StatusAtendimento != "C").OrderByDescending(a => a.DataHora).ToList();
+		if (atendimentos.Count == 0) { Msg("Nenhum atendimento na agenda."); return; }
+		System.Console.WriteLine($"  {"Cliente",-20} {"Barbeiro",-20} {"Serviço",-20} {"Preço",-10} {"Data",-18}");
+		Separador();
+		foreach (var a in atendimentos)
+			System.Console.WriteLine($"  {(a.Cliente?.Nome ?? "N/D"),-20} {(a.Profissional?.Nome ?? "N/D"),-20} {(a.Servico?.Nome ?? "N/D"),-20} {(a.Servico != null ? $"R${a.Servico.Preco:F2}" : "-"),-10} {a.DataHora:dd/MM/yy HH:mm}");
+		Pausar();
+	}
+
+	private async Task RelatorioFaturamento()
+	{
+		LimparConsole();
+		Titulo("Relatório 2: Faturamento Total por Barbeiro");
+		var realizados = (await AtendimentoService.GetAllAsync()).Where(a => a.StatusAtendimento == "R" && a.Servico != null).ToList();
+		if (realizados.Count == 0) { Msg("Nenhum faturamento registrado (nenhum atendimento 'Realizado')."); return; }
+
+		var fat = realizados.GroupBy(a => a.Profissional?.Nome ?? "Desconhecido")
+			.Select(g => new { Barbeiro = g.Key, Total = g.Sum(a => a.Servico!.Preco), Qtd = g.Count() })
+			.OrderByDescending(x => x.Total).ToList();
+
+		System.Console.WriteLine($"  {"Barbeiro",-30} {"Total Faturado",-20} {"Qtd Serviços"}");
+		Separador();
+		foreach (var f in fat)
+			System.Console.WriteLine($"  {f.Barbeiro,-30} R${f.Total,-18:F2} {f.Qtd}");
+
+		Pausar();
+	}
+
+	private async Task RelatorioServicosPorBairro()
+	{
+		LimparConsole();
+		Titulo("Relatório 3: Serviços mais procurados por Bairro");
+		var comBairro = (await AtendimentoService.GetAllAsync())
+			.Where(a => a.Cliente != null && !string.IsNullOrWhiteSpace(a.Cliente.EndBairro) && a.Servico != null).ToList();
+
+		if (comBairro.Count == 0) { Msg("Nenhum dado com cruzamento de Bairro encontrado."); return; }
+
+		var bairros = comBairro
+			.GroupBy(a => a.Cliente!.EndBairro!.Trim())
+			.OrderBy(gb => gb.Key)
+			.ToList();
+
+		System.Console.WriteLine($"  {"Bairro",-20} | {"Serviço",-25} | {"Qtd",-5} | {"Total Faturado",-15}");
+		Separador();
+
+		foreach (var bairroGroup in bairros)
+		{
+			var totalBairroQtd = bairroGroup.Count();
+			var totalBairroFat = bairroGroup.Sum(a => a.Servico!.Preco);
+
+			System.Console.WriteLine($"  {bairroGroup.Key,-20} | {"",-25} | {totalBairroQtd,-5} | R${totalBairroFat,-13:F2}");
+
+			var servicosNoBairro = bairroGroup
+				.GroupBy(a => a.Servico!.Nome)
+				.Select(gs => new 
+				{ 
+					Servico = gs.Key, 
+					Qtd = gs.Count(), 
+					TotalFat = gs.Sum(a => a.Servico!.Preco) 
+				})
+				.OrderByDescending(s => s.Qtd)
+				.ToList();
+
+			foreach (var s in servicosNoBairro)
+				System.Console.WriteLine($"  {"",-20} | {s.Servico,-25} | {s.Qtd,-5} | R${s.TotalFat,-13:F2}");
+		}
+
+		Pausar();
+	}
+}

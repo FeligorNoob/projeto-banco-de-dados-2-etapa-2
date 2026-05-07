@@ -1,0 +1,108 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\git\\ProjetoBancoDados2\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\menus\\centralcrudconsole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\menus\\centralcrudconsole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\models\\cargomodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\models\\cargomodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\barberflow_script.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\barberflow_script.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\menus\\administradorconsole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\menus\\administradorconsole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\menus\\consolemenubase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\menus\\consolemenubase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|c:\\git\\projetobancodados2\\barberapplication.console\\barberflow_script.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{1E5C7867-EC6D-FE94-7148-4DBB61E90C9D}|BarberApplication.Console\\BarberApplication.Console.csproj|solutionrelative:barberapplication.console\\barberflow_script.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 680,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "BarberFlow_Script.sql ",
+              "DocumentMoniker": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\BarberFlow_Script.sql",
+              "RelativeDocumentMoniker": "BarberApplication.Console\\BarberFlow_Script.sql",
+              "ToolTip": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\BarberFlow_Script.sql",
+              "RelativeToolTip": "BarberApplication.Console\\BarberFlow_Script.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2026-05-07T04:57:47.901Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CargoModel.cs",
+              "DocumentMoniker": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Models\\CargoModel.cs",
+              "RelativeDocumentMoniker": "BarberApplication.Console\\Models\\CargoModel.cs",
+              "ToolTip": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Models\\CargoModel.cs",
+              "RelativeToolTip": "BarberApplication.Console\\Models\\CargoModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T04:57:26.655Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ConsoleMenuBase.cs",
+              "DocumentMoniker": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\ConsoleMenuBase.cs",
+              "RelativeDocumentMoniker": "BarberApplication.Console\\Menus\\ConsoleMenuBase.cs",
+              "ToolTip": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\ConsoleMenuBase.cs",
+              "RelativeToolTip": "BarberApplication.Console\\Menus\\ConsoleMenuBase.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T04:43:36.679Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CentralCrudConsole.cs",
+              "DocumentMoniker": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\CentralCrudConsole.cs",
+              "RelativeDocumentMoniker": "BarberApplication.Console\\Menus\\CentralCrudConsole.cs",
+              "ToolTip": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\CentralCrudConsole.cs",
+              "RelativeToolTip": "BarberApplication.Console\\Menus\\CentralCrudConsole.cs",
+              "ViewState": "AgIAAPgBAAAAAAAAAAAQwAECAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T04:35:01.583Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AdministradorConsole.cs",
+              "DocumentMoniker": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\AdministradorConsole.cs",
+              "RelativeDocumentMoniker": "BarberApplication.Console\\Menus\\AdministradorConsole.cs",
+              "ToolTip": "C:\\git\\ProjetoBancoDados2\\BarberApplication.Console\\Menus\\AdministradorConsole.cs",
+              "RelativeToolTip": "BarberApplication.Console\\Menus\\AdministradorConsole.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T03:48:34.495Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

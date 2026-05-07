@@ -1,0 +1,247 @@
+﻿using BarberApplication.Console.Models;
+using BarberApplication.Console.Services;
+
+namespace BarberApplication.Console.Menus;
+
+/// <summary>
+/// Menu do console para a área do Cliente.
+/// </summary>
+public class ClienteConsole : ConsoleMenuBase
+{
+    // Cargo 3 = Cliente
+    private const int CargoCliente = 3;
+
+    public ClienteConsole(
+        IUsuarioService usuarioService,
+        ICargoService cargoService,
+        IEspecialidadeService especialidadeService,
+        IProfissionalEspecialidadeService profEspService,
+        IServicoService servicoService,
+        IAtendimentoService atendimentoService)
+        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
+    {
+    }
+
+    public override async Task ExibirAsync()
+    {
+        LimparConsole();
+        Titulo("Área do Cliente");
+        System.Console.WriteLine("  1. Login (informar CPF)");
+        System.Console.WriteLine("  2. Cadastrar-se");
+        System.Console.WriteLine("  0. Voltar");
+        Separador();
+
+        var opcao = LerOpcao();
+        UsuarioModel? clienteLogado = null;
+
+        if (opcao == "1")
+        {
+            var cpf = LerInput("Digite seu CPF (11 dígitos)");
+            if (cpf == "0") return;
+
+            var usuarios = (await UsuarioService.GetAllAsync()).ToList();
+            clienteLogado = usuarios.FirstOrDefault(u => u.Cpf == cpf);
+
+            if (clienteLogado == null) { MsgErro("CPF não encontrado. Realize seu cadastro primeiro."); return; }
+            if (clienteLogado.IdCargo != CargoCliente) { MsgErro("Este CPF não pertence a um cliente."); return; }
+
+            Msg($"Bem-vindo(a), {clienteLogado.Nome}!");
+        }
+        else if (opcao == "2")
+        {
+            var cpf = LerInput("CPF (11 dígitos)");
+            if (cpf == "0") return;
+            var nome = LerInput("Nome completo");
+            if (nome == "0") return;
+            var tel = LerInput("Telefone (opcional, Enter para pular)");
+            if (tel == "0") return;
+            var rua = LerInput("Rua (opcional, Enter para pular)");
+            if (rua == "0") return;
+            var bairro = LerInput("Bairro (opcional, Enter para pular)");
+            if (bairro == "0") return;
+            var cep = LerInput("CEP (opcional, 8 dígitos, Enter para pular)");
+            if (cep == "0") return;
+
+            try
+            {
+                clienteLogado = await UsuarioService.CreateAsync(new UsuarioModel
+                {
+                    Cpf = cpf,
+                    Nome = nome,
+                    Telefone = string.IsNullOrWhiteSpace(tel) ? null : tel,
+                    EndRua = string.IsNullOrWhiteSpace(rua) ? null : rua,
+                    EndBairro = string.IsNullOrWhiteSpace(bairro) ? null : bairro,
+                    EndCep = string.IsNullOrWhiteSpace(cep) ? null : cep,
+                    IdCargo = CargoCliente
+                });
+            }
+            catch (ArgumentException ex) { MsgErro(ex.Message); return; }
+
+            Msg($"Cadastro realizado! Bem-vindo(a), {clienteLogado.Nome}!");
+        }
+        else { return; }
+
+        await SubMenuCliente(clienteLogado);
+    }
+
+    private async Task SubMenuCliente(UsuarioModel cliente)
+    {
+        while (true)
+        {
+            LimparConsole();
+            Titulo($"Cliente: {cliente.Nome} (CPF: {cliente.Cpf})");
+            System.Console.WriteLine("  1. Agendar um Serviço");
+            System.Console.WriteLine("  2. Meus Agendamentos");
+            System.Console.WriteLine("  3. Cancelar um Agendamento");
+            System.Console.WriteLine("  4. Visualizar Serviços Disponíveis");
+            System.Console.WriteLine("  0. Voltar");
+            Separador();
+
+            var opcao = LerOpcao();
+            await ExecutarProtegidoAsync(async () =>
+            {
+                switch (opcao)
+                {
+                    case "1": await AgendarServico(cliente); break;
+                    case "2": await VerAgendamentos(cliente); break;
+                    case "3": await CancelarAgendamento(cliente); break;
+                    case "4": await VisualizarServicos(); break;
+                    case "0": return;
+                    default: MsgErro("Opção inválida!"); break;
+                }
+            });
+            if (opcao == "0") return;
+        }
+    }
+
+    private async Task AgendarServico(UsuarioModel cliente)
+    {
+        LimparConsole();
+        Titulo("Agendar um Serviço");
+
+        var servicos = (await ServicoService.GetAllAsync()).ToList();
+        if (servicos.Count == 0) { MsgErro("Não há serviços cadastrados."); return; }
+
+        System.Console.WriteLine("  Serviços disponíveis:");
+        for (int i = 0; i < servicos.Count; i++)
+            System.Console.WriteLine($"    {i + 1}. {servicos[i].Nome} - R${servicos[i].Preco:F2} ({servicos[i].DuracaoEstimada} min)");
+
+        var inServ = LerInput($"Escolha o serviço (1 a {servicos.Count})");
+        if (inServ == "0") return;
+        if (!int.TryParse(inServ, out int idxServ) || idxServ < 1 || idxServ > servicos.Count) { MsgErro("Opção inválida!"); return; }
+        var servEscolhido = servicos[idxServ - 1];
+
+        // Profissionais com cargo 2
+        var todos = (await UsuarioService.GetAllAsync()).ToList();
+        List<UsuarioModel> profsAptos;
+
+        if (servEscolhido.FkEspecialidade.HasValue)
+        {
+            var profEsps = (await ProfEspService.GetAllAsync()).ToList();
+            var idsEsp = profEsps.Where(pe => pe.FkEspecialidade == servEscolhido.FkEspecialidade.Value)
+                                  .Select(pe => pe.FkProfissional).ToHashSet();
+            profsAptos = todos.Where(u => u.IdCargo == 2 && idsEsp.Contains(u.IdUsuario)).ToList();
+        }
+        else
+        {
+            profsAptos = todos.Where(u => u.IdCargo == 2).ToList();
+        }
+
+        if (profsAptos.Count == 0) { MsgErro("Não há profissionais que atendam esta especialidade."); return; }
+
+        System.Console.WriteLine("\n  Profissionais disponíveis:");
+        for (int i = 0; i < profsAptos.Count; i++)
+            System.Console.WriteLine($"    {i + 1}. {profsAptos[i].Nome}");
+
+        var inProf = LerInput($"Escolha o profissional (1 a {profsAptos.Count})");
+        if (inProf == "0") return;
+        if (!int.TryParse(inProf, out int idxProf) || idxProf < 1 || idxProf > profsAptos.Count) { MsgErro("Opção inválida!"); return; }
+        var profEscolhido = profsAptos[idxProf - 1];
+
+        var todosAtend = (await AtendimentoService.GetAllAsync()).ToList();
+        var atendProf = todosAtend.Where(a => a.FkProfissional == profEscolhido.IdUsuario && a.StatusAtendimento != "C").ToList();
+
+        DateTime dataHora;
+        while (true)
+        {
+            var inData = LerInput("Data e hora (dd/MM/yyyy HH:mm)");
+            if (inData == "0") return;
+
+            if (!DateTime.TryParseExact(inData, "dd/MM/yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out dataHora))
+            {
+                System.Console.ForegroundColor = ConsoleColor.Red;
+                System.Console.WriteLine("  ✖ Data/hora inválida!");
+                System.Console.ResetColor();
+                continue;
+            }
+            if (dataHora < DateTime.Now)
+            {
+                System.Console.ForegroundColor = ConsoleColor.Red;
+                System.Console.WriteLine("  ✖ Essa data já passou, escolha um horário futuro.");
+                System.Console.ResetColor();
+                continue;
+            }
+
+            var fimDesejado = dataHora.AddMinutes(servEscolhido.DuracaoEstimada);
+            bool conflito = atendProf.Any(a =>
+            {
+                var fim = a.DataHora.AddMinutes(a.Servico?.DuracaoEstimada ?? 30);
+                return dataHora < fim && fimDesejado > a.DataHora;
+            });
+
+            if (conflito)
+            {
+                System.Console.ForegroundColor = ConsoleColor.Yellow;
+                System.Console.WriteLine("  ⚠ O profissional NÃO está disponível neste horário. Tente outro.");
+                System.Console.ResetColor();
+            }
+            else break;
+        }
+
+        await AtendimentoService.CreateAsync(new AtendimentoModel
+        {
+            FkProfissional = profEscolhido.IdUsuario,
+            FkCliente = cliente.IdUsuario,
+            FkServico = servEscolhido.IdServico,
+            DataHora = dataHora,
+            StatusAtendimento = "A"
+        });
+        Msg("Agendamento criado com sucesso!");
+    }
+
+    private async Task VerAgendamentos(UsuarioModel cliente)
+    {
+        LimparConsole();
+        Titulo($"Agendamentos de {cliente.Nome}");
+        var atendimentos = (await AtendimentoService.GetAllAsync())
+            .Where(a => a.FkCliente == cliente.IdUsuario).ToList();
+
+        if (atendimentos.Count == 0) { Msg("Você não possui agendamentos."); return; }
+
+        System.Console.WriteLine($"  {"ID",-5} {"Serviço",-20} {"Profissional",-20} {"Data/Hora",-18} {"Status",-10}");
+        Separador();
+        foreach (var a in atendimentos)
+            System.Console.WriteLine($"  {a.IdAtendimento,-5} {(a.Servico?.Nome ?? "-"),-20} {(a.Profissional?.Nome ?? "-"),-20} {a.DataHora:dd/MM/yyyy HH:mm}  {FormatarStatus(a.StatusAtendimento),-10}");
+        Pausar();
+    }
+
+    private async Task CancelarAgendamento(UsuarioModel cliente)
+    {
+        LimparConsole();
+        Titulo("Cancelar Agendamento");
+        var agendados = (await AtendimentoService.GetAllAsync())
+            .Where(a => a.FkCliente == cliente.IdUsuario && a.StatusAtendimento == "A").ToList();
+
+        if (agendados.Count == 0) { Msg("Nenhum agendamento pendente para cancelar."); return; }
+
+        for (int i = 0; i < agendados.Count; i++)
+            System.Console.WriteLine($"  {i + 1}. {agendados[i].Servico?.Nome ?? "-"} com {agendados[i].Profissional?.Nome ?? "-"} em {agendados[i].DataHora:dd/MM/yyyy HH:mm}");
+
+        var inCanc = LerInput("Escolha qual cancelar");
+        if (inCanc == "0") return;
+        if (!int.TryParse(inCanc, out int idx) || idx < 1 || idx > agendados.Count) { MsgErro("Opção inválida!"); return; }
+
+        await AtendimentoService.AtualizarStatusAsync(agendados[idx - 1].IdAtendimento, "C");
+        Msg("Agendamento cancelado com sucesso!");
+    }
+}
