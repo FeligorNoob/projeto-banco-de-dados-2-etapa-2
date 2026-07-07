@@ -1,0 +1,21 @@
+# ===== Artefatos de build do .NET =====
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# ===== IDEs / Editores =====
+# JetBrains Rider / IntelliJ
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+
+# Visual Studio Code
+.vscode/
+
+# ===== Sistema operacional =====
+Thumbs.db
+.DS_Store

@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using BarberApplication.Console.Data;
+using BarberApplication.Console.Data.MySql;
+using BarberApplication.Console.Data.Mongo;
 using BarberApplication.Console.Services;
 using BarberApplication.Console.Menus;
 
@@ -35,7 +37,7 @@ public class BarberApp : ConsoleMenuBase
     /// <summary>
     /// Cria e executa a aplicação console.
     /// Usa o Factory Method para instanciar os services de acesso ao banco.
-    /// Para trocar de banco, basta substituir MySqlDatabaseFactory por outra implementação.
+    /// O banco (MySQL ou MongoDB) é escolhido pelo usuário na inicialização.
     /// </summary>
     public static async Task RunAsync()
     {
@@ -44,12 +46,10 @@ public class BarberApp : ConsoleMenuBase
             .AddJsonFile("appsettings.json", optional: false)
             .Build();
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
-
         // ===== FACTORY METHOD =====
-        // Para trocar de banco de dados, basta substituir esta linha:
-        //   using IDatabaseFactory factory = new MongoDatabaseFactory(connectionString);
-        using IDatabaseFactory factory = new MySqlDatabaseFactory(connectionString);
+        // Seleção do banco em tempo de execução. As duas conexões ficam no appsettings.json.
+        using IDatabaseFactory? factory = CriarFactory(configuration);
+        if (factory is null) return; // usuário optou por sair
 
         var app = new BarberApp(
             factory.CreateUsuarioService(),
@@ -61,6 +61,64 @@ public class BarberApp : ConsoleMenuBase
         );
 
         await app.ExibirAsync();
+    }
+
+    /// <summary>
+    /// Exibe o menu de seleção de banco e cria a IDatabaseFactory correspondente.
+    /// Repete a pergunta se a conexão falhar. Retorna null se o usuário optar por sair.
+    /// </summary>
+    private static IDatabaseFactory? CriarFactory(IConfiguration configuration)
+    {
+        while (true)
+        {
+            try { System.Console.Clear(); } catch { }
+            System.Console.WriteLine();
+            System.Console.WriteLine("  ╔══════════════════════════════════════════════╗");
+            System.Console.WriteLine("  ║  BarberFlow — Seleção de Banco de Dados       ║");
+            System.Console.WriteLine("  ╚══════════════════════════════════════════════╝");
+            System.Console.WriteLine();
+            System.Console.WriteLine("  Qual banco de dados deseja utilizar?");
+            System.Console.WriteLine("  1. MySQL   (Entity Framework Core)");
+            System.Console.WriteLine("  2. MongoDB (driver oficial)");
+            System.Console.WriteLine("  0. Sair");
+            System.Console.WriteLine();
+            System.Console.Write("  Opção: ");
+            var opcao = System.Console.ReadLine()?.Trim();
+
+            try
+            {
+                switch (opcao)
+                {
+                    case "1":
+                        var mysqlConn = configuration.GetConnectionString("MySql")
+                            ?? throw new InvalidOperationException("Connection string 'MySql' não configurada no appsettings.json.");
+                        return new MySqlDatabaseFactory(mysqlConn);
+
+                    case "2":
+                        var mongoConn = configuration.GetConnectionString("Mongo")
+                            ?? throw new InvalidOperationException("Connection string 'Mongo' não configurada no appsettings.json.");
+                        var mongoDb = configuration["MongoDatabase"]
+                            ?? throw new InvalidOperationException("'MongoDatabase' não configurado no appsettings.json.");
+                        return new MongoDatabaseFactory(mongoConn, mongoDb);
+
+                    case "0":
+                        return null;
+
+                    default:
+                        System.Console.WriteLine("\n  Opção inválida! Pressione qualquer tecla para tentar novamente...");
+                        System.Console.ReadKey(true);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine("\n  Não foi possível conectar ao banco selecionado:");
+                System.Console.WriteLine($"  {ex.Message}");
+                System.Console.WriteLine("\n  Verifique o appsettings.json e se o servidor está no ar.");
+                System.Console.WriteLine("  Pressione qualquer tecla para voltar à seleção...");
+                System.Console.ReadKey(true);
+            }
+        }
     }
 
     /// <summary>

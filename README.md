@@ -1,6 +1,11 @@
 # 💈 BarberFlow — Sistema de Agendamento para Barbearia
 
-Aplicação console em **C# (.NET 10)** com **Entity Framework Core** e banco de dados **MySQL**, desenvolvida como projeto acadêmico de Banco de Dados 2.
+Aplicação console em **C# (.NET 10)** desenvolvida como projeto acadêmico de Banco de Dados 2. A aplicação suporta **dois bancos de dados** e permite escolher qual usar **na inicialização**:
+
+- **MySQL** (relacional) via **Entity Framework Core** + Pomelo;
+- **MongoDB** (NoSQL) via o **driver oficial** MongoDB.Driver.
+
+Ambos operam sobre as mesmas funcionalidades e interfaces — a troca é feita por um menu de seleção quando o programa inicia. Você só precisa configurar (e ter no ar) o banco que pretende usar.
 
 > **Repositório:** https://github.com/FeligorNoob/projeto-banco-de-dados-2.git
 
@@ -13,8 +18,12 @@ Antes de tudo, certifique-se de que as ferramentas abaixo estão instaladas na m
 | Ferramenta | Para que serve | Download |
 |------------|---------------|----------|
 | **Git** | Clonar o repositório | https://git-scm.com/downloads |
-| **MySQL 8.0+** | Banco de dados da aplicação | https://dev.mysql.com/downloads/installer/ |
+| **MySQL 8.0+** | Banco de dados relacional (opção 1) | https://dev.mysql.com/downloads/installer/ |
+| **MongoDB 6.0+** | Banco de dados NoSQL (opção 2) | https://www.mongodb.com/try/download/community |
+| **mongosh** | Cliente de linha de comando do MongoDB (para rodar o seed) | https://www.mongodb.com/try/download/shell |
 | **.NET 10 SDK** | Compilar e executar o projeto C# | https://dotnet.microsoft.com/download/dotnet/10.0 |
+
+> 💡 Você **não precisa** instalar os dois bancos. Instale apenas o que for usar (MySQL **ou** MongoDB). Se quiser testar os dois, instale ambos.
 
 ---
 
@@ -49,9 +58,9 @@ Se aparecer algo como `git version 2.x.x`, a instalação foi bem-sucedida. ✅
 
 ---
 
-### Passo 3 — Instalar o .NET 9 SDK
+### Passo 3 — Instalar o .NET 10 SDK
 
-1. Acesse https://dotnet.microsoft.com/download/dotnet/9.0
+1. Acesse https://dotnet.microsoft.com/download/dotnet/10.0
 2. Na seção **SDK**, clique em **"Download"** para Windows x64
 3. Execute o instalador
 4. Ao final, abra um novo **Prompt de Comando** e execute:
@@ -82,7 +91,11 @@ cd projeto-banco-de-dados-2
 
 ---
 
-### Passo 5 — Importar o Banco de Dados
+### Passo 5 — Importar os Dados (escolha o seu banco)
+
+> Faça **apenas** o passo correspondente ao banco que você vai usar: **5A** para MySQL **ou** **5B** para MongoDB.
+
+#### Passo 5A — Importar os Dados no MySQL
 
 O banco de dados já está pronto para uso no arquivo de dump localizado em:
 
@@ -121,21 +134,41 @@ mysql -u root -p BarberFlow < dump-BarberFlow-202605070336.sql
 > 6. Em "Default Target Schema", selecione `BarberFlow`
 > 7. Clique em **"Start Import"**
 
+#### Passo 5B — Popular os Dados no MongoDB
+
+O MongoDB não usa o dump `.sql`. Em vez disso, o projeto traz um **script de seed equivalente** (com os mesmos dados de exemplo) em:
+
+```
+mongo-seed-BarberFlow.js
+```
+
+Com o **serviço do MongoDB no ar** e o **mongosh** instalado, rode na raiz do projeto:
+
+```
+mongosh "mongodb://localhost:27017" mongo-seed-BarberFlow.js
+```
+
+O script **recria** o banco `BarberFlow` do zero (dropa as coleções e insere os dados), cria os índices necessários (CPF único e chave composta de profissional × especialidade) e configura os contadores de id. Pode ser executado quantas vezes quiser para restaurar os dados. Ao final, ele imprime a contagem de documentos de cada coleção.
+
+> 💡 O banco e as coleções são criados automaticamente pelo script — você **não** precisa criá-los antes (diferente do MySQL).
+
 ---
 
-### Passo 6 — Configurar a Conexão com o Banco
+### Passo 6 — Configurar as Conexões
 
-Abra o arquivo `BarberApplication.Console/appsettings.json` com qualquer editor de texto (Bloco de Notas, VS Code, etc.):
+Abra o arquivo `BarberApplication.Console/appsettings.json` com qualquer editor de texto (Bloco de Notas, VS Code, etc.). Ele guarda as **duas** conexões — você ajusta a do banco que for usar:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "server=localhost;port=3306;database=BarberFlow;user=root;password=root"
-  }
+    "MySql": "server=localhost;port=3306;database=BarberFlow;user=root;password=root",
+    "Mongo": "mongodb://localhost:27017"
+  },
+  "MongoDatabase": "BarberFlow"
 }
 ```
 
-**Ajuste os valores conforme sua instalação:**
+**Conexão MySQL** (`ConnectionStrings:MySql`) — ajuste conforme sua instalação:
 
 | Parâmetro  | Valor Padrão | O que mudar                          |
 |------------|--------------|--------------------------------------|
@@ -145,7 +178,14 @@ Abra o arquivo `BarberApplication.Console/appsettings.json` com qualquer editor 
 | `user`     | `root`       | Manter (ou o usuário que você criou) |
 | `password` | `root`       | **Alterar para a sua senha do MySQL** |
 
-> ⚠️ **Se não alterar a senha correta aqui, a aplicação não vai conseguir conectar ao banco.**
+**Conexão MongoDB** (`ConnectionStrings:Mongo` + `MongoDatabase`):
+
+| Parâmetro        | Valor Padrão                | O que mudar                                        |
+|------------------|-----------------------------|----------------------------------------------------|
+| `Mongo`          | `mongodb://localhost:27017` | Mudar host/porta se o MongoDB não estiver local ou usar outra porta |
+| `MongoDatabase`  | `BarberFlow`                | Manter (deve bater com o banco criado pelo seed)   |
+
+> ⚠️ **Configure corretamente a conexão do banco que você escolher** — caso contrário a aplicação não conseguirá conectar. Você só precisa acertar a conexão do banco que vai usar.
 
 ---
 
@@ -172,7 +212,7 @@ Build succeeded.
     0 Error(s)
 ```
 
-Se aparecer erros, verifique se o .NET 9 SDK está instalado corretamente (Passo 3).
+Se aparecer erros, verifique se o .NET 10 SDK está instalado corretamente (Passo 3).
 
 ---
 
@@ -182,7 +222,22 @@ Se aparecer erros, verifique se o .NET 9 SDK está instalado corretamente (Passo
 dotnet run
 ```
 
-Você verá o menu principal:
+**Primeiro, você escolhe o banco de dados** que será usado nesta execução:
+
+```
+  ╔══════════════════════════════════════════════╗
+  ║  BarberFlow — Seleção de Banco de Dados       ║
+  ╚══════════════════════════════════════════════╝
+
+  Qual banco de dados deseja utilizar?
+  1. MySQL   (Entity Framework Core)
+  2. MongoDB (driver oficial)
+  0. Sair
+```
+
+Digite `1` para **MySQL** ou `2` para **MongoDB** (o banco escolhido precisa estar no ar e configurado conforme o Passo 6). Se a conexão falhar, o programa avisa e volta para esta tela.
+
+Em seguida, aparece o menu principal:
 
 ```
   ╔══════════════════════════════════════════════╗
@@ -195,6 +250,8 @@ Você verá o menu principal:
   4. Central de Dados (CRUDs Base)
   0. Sair
 ```
+
+> ℹ️ As funcionalidades são **idênticas** nos dois bancos. A escolha vale apenas para a execução atual — para trocar de banco, saia e rode `dotnet run` novamente.
 
 ---
 
@@ -209,9 +266,9 @@ Você verá o menu principal:
 
 ---
 
-## 📊 Dados de Exemplo (já incluídos no dump)
+## 📊 Dados de Exemplo (MySQL e MongoDB)
 
-O arquivo de dump já contém os seguintes dados prontos para uso:
+Tanto o dump do MySQL (`dump-BarberFlow-202605070336.sql`) quanto o seed do MongoDB (`mongo-seed-BarberFlow.js`) trazem **os mesmos** dados prontos para uso:
 
 - **1** Administrador (CPF: `99999999999`)
 - **10** Profissionais (CPFs: `11111111102` até `11111111111`)
@@ -237,5 +294,13 @@ O arquivo de dump já contém os seguintes dados prontos para uso:
 - Corrija o campo `password` com a senha definida durante a instalação do MySQL
 
 ### O banco foi importado mas a aplicação não encontra as tabelas
-- Verifique se o banco `BarberFlow` foi criado antes da importação (Passo 5)
+- Verifique se o banco `BarberFlow` foi criado antes da importação (Passo 5A)
 - Confirme o nome do banco no `appsettings.json` (campo `database=BarberFlow`)
+
+### (MongoDB) "A timeout occurred" / "No connection could be made" ao escolher a opção 2
+- Verifique se o serviço do MongoDB está rodando (Painel de Controle → Serviços → procure "MongoDB")
+- Confirme o host/porta em `ConnectionStrings:Mongo` no `appsettings.json` (padrão `mongodb://localhost:27017`)
+
+### (MongoDB) A aplicação abre mas não aparece nenhum dado
+- Rode o seed antes de usar: `mongosh "mongodb://localhost:27017" mongo-seed-BarberFlow.js` (Passo 5B)
+- Confirme que `MongoDatabase` no `appsettings.json` é `BarberFlow` (mesmo banco criado pelo seed)
