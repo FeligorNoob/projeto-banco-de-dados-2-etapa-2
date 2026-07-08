@@ -7,7 +7,7 @@ Aplicação console em **C# (.NET 10)** desenvolvida como projeto acadêmico de 
 
 Ambos operam sobre as mesmas funcionalidades e interfaces — a troca é feita por um menu de seleção quando o programa inicia. Você só precisa configurar (e ter no ar) o banco que pretende usar.
 
-> **Repositório:** https://github.com/FeligorNoob/projeto-banco-de-dados-2.git
+> **Repositório:** https://github.com/FeligorNoob/projeto-banco-de-dados-2-etapa-2.git
 
 ---
 
@@ -118,15 +118,15 @@ Se aparecer algo como `10.0.x`, a instalação foi bem-sucedida. ✅
 Abra o **Prompt de Comando** ou **PowerShell**, navegue até uma pasta de sua preferência (ex: `Documentos`) e execute:
 
 ```
-git clone https://github.com/FeligorNoob/projeto-banco-de-dados-2.git
+git clone https://github.com/FeligorNoob/projeto-banco-de-dados-2-etapa-2.git
 ```
 
-Isso vai criar uma pasta chamada `projeto-banco-de-dados-2` com todos os arquivos do projeto.
+Isso vai criar uma pasta chamada `projeto-banco-de-dados-2-etapa-2` com todos os arquivos do projeto.
 
 Em seguida, entre na pasta do projeto:
 
 ```
-cd projeto-banco-de-dados-2
+cd projeto-banco-de-dados-2-etapa-2
 ```
 
 ---
