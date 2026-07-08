@@ -43,7 +43,11 @@ Se aparecer algo como `git version 2.x.x`, a instalação foi bem-sucedida. ✅
 
 ---
 
-### Passo 2 — Instalar o MySQL
+### Passo 2 — Instalar o Banco de Dados (escolha o seu)
+
+> Faça **apenas** o passo do banco que você vai usar: **2A** para MySQL **ou** **2B** para MongoDB. Se quiser testar os dois, faça ambos.
+
+#### Passo 2A — Instalar o MySQL
 
 1. Acesse https://dev.mysql.com/downloads/installer/
 2. Baixe o **MySQL Installer for Windows** (o arquivo maior, "Full")
@@ -55,6 +59,42 @@ Se aparecer algo como `git version 2.x.x`, a instalação foi bem-sucedida. ✅
 5. Finalize a instalação
 
 > **Verificação:** Abra o **MySQL Command Line Client** (instalado junto com o MySQL) e tente fazer login com a senha que você definiu. Se abrir sem erros, está funcionando. ✅
+
+#### Passo 2B — Instalar o MongoDB
+
+O MongoDB precisa de **duas** ferramentas: o **servidor** (MongoDB Community Server) e o **cliente de linha de comando** (mongosh), usado para rodar o seed no Passo 5B. Os instaladores recentes **não** trazem mais o `mongosh` embutido, por isso ele é baixado à parte.
+
+**1. Instalar o MongoDB Community Server**
+
+1. Acesse https://www.mongodb.com/try/download/community
+2. Selecione:
+   - **Version:** a última disponível (6.0 ou superior)
+   - **Platform:** Windows
+   - **Package:** `msi`
+3. Clique em **Download** e execute o instalador
+4. Escolha o tipo de instalação **"Complete"**
+5. Na tela **"Service Configuration"**:
+   - Mantenha marcado **"Install MongoD as a Service"** — isso faz o MongoDB **iniciar sozinho junto com o Windows** (recomendado)
+   - Mantenha **"Run service as Network Service user"** e o nome do serviço como `MongoDB`
+   - **Porta:** o padrão é `27017` — **anote, você vai precisar dela**
+6. (Opcional) Deixe marcado **"Install MongoDB Compass"** se quiser uma interface gráfica para visualizar os dados
+7. Conclua a instalação clicando em **Next / Install**
+
+**2. Instalar o mongosh (MongoDB Shell)**
+
+1. Acesse https://www.mongodb.com/try/download/shell
+2. Em **Package**, selecione `msi` (Platform: Windows) e clique em **Download**
+3. Execute o instalador e siga com as opções padrão (**Next → Install**)
+
+> **Verificação:** Abra um novo **Prompt de Comando** ou **PowerShell** e execute:
+>
+> ```
+> mongosh --version
+> ```
+>
+> Se aparecer um número de versão (ex: `2.x.x`), o cliente está instalado. Para confirmar que o **servidor** está no ar, execute `mongosh` — se conectar e abrir o prompt `test>`, está funcionando. Digite `exit` para sair. ✅
+>
+> Se der erro de conexão, verifique se o serviço está rodando em **Painel de Controle → Serviços → "MongoDB"** (ou execute `net start MongoDB` no Prompt de Comando como administrador).
 
 ---
 
@@ -105,7 +145,7 @@ dump-BarberFlow-202605070336.sql
 
 Este arquivo contém toda a estrutura das tabelas e os dados de exemplo já inseridos (usuários, serviços, especialidades e atendimentos).
 
-**Para importar, execute o comando abaixo no Prompt de Comando** (substituindo `SUA_SENHA` pela senha do MySQL que você definiu no Passo 2):
+**Para importar, execute o comando abaixo no Prompt de Comando** (substituindo `SUA_SENHA` pela senha do MySQL que você definiu no Passo 2A):
 
 ```
 mysql -u root -p < dump-BarberFlow-202605070336.sql
@@ -173,7 +213,7 @@ Abra o arquivo `BarberApplication.Console/appsettings.json` com qualquer editor 
 | Parâmetro  | Valor Padrão | O que mudar                          |
 |------------|--------------|--------------------------------------|
 | `server`   | `localhost`  | Manter se o MySQL está na mesma máquina |
-| `port`     | `3306`       | Mudar se escolheu outra porta no Passo 2 |
+| `port`     | `3306`       | Mudar se escolheu outra porta no Passo 2A |
 | `database` | `BarberFlow` | Manter                               |
 | `user`     | `root`       | Manter (ou o usuário que você criou) |
 | `password` | `root`       | **Alterar para a sua senha do MySQL** |
