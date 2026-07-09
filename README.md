@@ -266,7 +266,7 @@ dotnet run
 
 ```
   ╔══════════════════════════════════════════════╗
-  ║  BarberFlow — Seleção de Banco de Dados       ║
+  ║  BarberFlow — Seleção de Banco de Dados      ║
   ╚══════════════════════════════════════════════╝
 
   Qual banco de dados deseja utilizar?
