@@ -16,12 +16,16 @@ namespace BarberApplication.Console.Data.Mongo;
 public static class MongoMappings
 {
     private static bool _registered;
-    private static readonly object _lock = new();
+    private static readonly Lock Lock = new();
 
     public static void Register()
     {
-        if (_registered) return;
-        lock (_lock)
+        lock (Lock)
+        {
+            if (_registered) return;
+        }
+
+        lock (Lock)
         {
             if (_registered) return;
 

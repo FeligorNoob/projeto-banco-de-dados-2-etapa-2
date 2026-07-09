@@ -6,21 +6,16 @@ namespace BarberApplication.Console.Menus;
 /// <summary>
 /// Menu do console para a área do Cliente.
 /// </summary>
-public class ClienteConsole : ConsoleMenuBase
+public class ClienteConsole(
+    IUsuarioService UsuarioService,
+    IEspecialidadeService EspecialidadeService,
+    IProfissionalEspecialidadeService ProfEspService,
+    IServicoService ServicoService,
+    IAtendimentoService AtendimentoService)
+    : ConsoleMenuBase
 {
     // Cargo 3 = Cliente
     private const int CargoCliente = 3;
-
-    public ClienteConsole(
-        IUsuarioService usuarioService,
-        ICargoService cargoService,
-        IEspecialidadeService especialidadeService,
-        IProfissionalEspecialidadeService profEspService,
-        IServicoService servicoService,
-        IAtendimentoService atendimentoService)
-        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
-    {
-    }
 
     public override async Task ExibirAsync()
     {
@@ -105,7 +100,7 @@ public class ClienteConsole : ConsoleMenuBase
                     case "1": await AgendarServico(cliente); break;
                     case "2": await VerAgendamentos(cliente); break;
                     case "3": await CancelarAgendamento(cliente); break;
-                    case "4": await VisualizarServicos(); break;
+                    case "4": await VisualizarServicos(ServicoService, EspecialidadeService); break;
                     case "0": return;
                     default: MsgErro("Opção inválida!"); break;
                 }

@@ -4,19 +4,15 @@ using System;
 
 namespace BarberApplication.Console.Menus;
 
-public class CentralCrudConsole : ConsoleMenuBase
+public class CentralCrudConsole(
+	IUsuarioService UsuarioService,
+	ICargoService CargoService,
+	IEspecialidadeService EspecialidadeService,
+	IProfissionalEspecialidadeService ProfEspService,
+	IServicoService ServicoService,
+	IAtendimentoService AtendimentoService)
+	: ConsoleMenuBase
 {
-	public CentralCrudConsole(
-		IUsuarioService usuarioService,
-		ICargoService cargoService,
-		IEspecialidadeService especialidadeService,
-		IProfissionalEspecialidadeService profEspService,
-		IServicoService servicoService,
-		IAtendimentoService atendimentoService)
-		: base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
-	{
-	}
-
 	public override async Task ExibirAsync()
 	{
 		while (true)
@@ -182,7 +178,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 
 		if (!int.TryParse(inId, out int idUsuario)) return;
 
-		try 
+		try
 		{
 			var ok = await UsuarioService.DeleteAsync(idUsuario);
 			if (ok) Msg("Usuário removido com sucesso!"); else MsgErro("Erro ao remover usuário (pode haver dependências).");
@@ -235,7 +231,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 		Titulo("Especialidades");
 		var esps = (await EspecialidadeService.GetAllAsync()).ToList();
 		if (esps.Count == 0) { Msg("Nenhuma especialidade cadastrada."); return; }
-		
+
 		System.Console.WriteLine($"  {"ID",-5} | {"Nome",-40}");
 		Separador();
 		foreach(var e in esps) System.Console.WriteLine($"  {e.IdEspecialidade,-5} | {e.Nome,-40}");
@@ -293,7 +289,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 			switch (opcao)
 			{
 				case "1": await CriarServico(); break;
-				case "2": await VisualizarServicos(); break;
+				case "2": await VisualizarServicos(ServicoService, EspecialidadeService); break;
 				case "3": await EditarServico(); break;
 				case "4": await RemoverServico(); break;
 				case "0": return;
@@ -348,7 +344,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 		System.Console.WriteLine();
 		System.Console.WriteLine("  Especialidades disponíveis:");
 		foreach(var e in especialidades) System.Console.WriteLine($"  [{e.IdEspecialidade}] {e.Nome}");
-		
+
 		var currentEsp = serv.FkEspecialidade.HasValue ? serv.FkEspecialidade.ToString() : "Nenhuma";
 		var inEsp = LerInputEdicao($"Novo ID Especialidade [{currentEsp}] (Enter para manter)");
 		if (inEsp != "0" && !string.IsNullOrWhiteSpace(inEsp)) {
@@ -424,7 +420,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 		foreach(var s in servicos) System.Console.WriteLine($"  [{s.IdServico}] {s.Nome} - R${s.Preco:F2}");
 		var inServ = LerInput("ID do Serviço"); if(inServ == "0" || !int.TryParse(inServ, out int fkServ)) return;
 
-		var inData = LerInput("Data e Hora (dd/MM/yyyy HH:mm)"); 
+		var inData = LerInput("Data e Hora (dd/MM/yyyy HH:mm)");
 		if(inData == "0" || !DateTime.TryParseExact(inData, "dd/MM/yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out DateTime dataHora)) return;
 		var status = LerInput("Status (A, R, C)"); if(status == "0" || string.IsNullOrWhiteSpace(status)) return;
 
@@ -538,7 +534,7 @@ public class CentralCrudConsole : ConsoleMenuBase
 		Titulo("Cargos");
 		var cargos = (await CargoService.GetAllAsync()).ToList();
 		if (cargos.Count == 0) { Msg("Nenhum cargo cadastrado."); return; }
-		
+
 		System.Console.WriteLine($"  {"ID",-5} | {"Nome",-40}");
 		Separador();
 		foreach(var c in cargos) System.Console.WriteLine($"  {c.IdCargo,-5} | {c.Nome,-40}");
@@ -631,8 +627,8 @@ public class CentralCrudConsole : ConsoleMenuBase
 		try {
 			await ProfEspService.CreateAsync(new ProfissionalEspecialidadeModel { FkProfissional = fkProf, FkEspecialidade = fkEsp });
 			Msg("Vinculado!");
-		} catch (Exception ex) { 
-			MsgErro($"Erro ao vincular: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}"); 
+		} catch (Exception ex) {
+			MsgErro($"Erro ao vincular: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}");
 		}
 	}
 
@@ -684,8 +680,8 @@ public class CentralCrudConsole : ConsoleMenuBase
 			var ok = await ProfEspService.DeleteAsync(fkProf, fkEsp);
 			if (ok) Msg("Removido!");
 			else MsgErro("Não foi possível encontrar o vínculo para remover. Verifique os IDs informados.");
-		} catch (Exception ex) { 
-			MsgErro($"Falha ao remover: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}"); 
+		} catch (Exception ex) {
+			MsgErro($"Falha ao remover: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}");
 		}
 	}
 
@@ -773,11 +769,11 @@ public class CentralCrudConsole : ConsoleMenuBase
 
 			var servicosNoBairro = bairroGroup
 				.GroupBy(a => a.Servico!.Nome)
-				.Select(gs => new 
-				{ 
-					Servico = gs.Key, 
-					Qtd = gs.Count(), 
-					TotalFat = gs.Sum(a => a.Servico!.Preco) 
+				.Select(gs => new
+				{
+					Servico = gs.Key,
+					Qtd = gs.Count(),
+					TotalFat = gs.Sum(a => a.Servico!.Preco)
 				})
 				.OrderByDescending(s => s.Qtd)
 				.ToList();

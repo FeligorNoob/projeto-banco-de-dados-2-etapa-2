@@ -1,44 +1,19 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using BarberApplication.Console.Data;
 using BarberApplication.Console.Data.MySql;
 using BarberApplication.Console.Data.Mongo;
-using BarberApplication.Console.Services;
 using BarberApplication.Console.Menus;
 
 namespace BarberApplication.Console;
 
-/// <summary>
-/// Classe principal que orquestra a aplicação console da barbearia.
-/// Utiliza o padrão Factory Method (IDatabaseFactory) para instanciar os services,
-/// permitindo trocar facilmente de banco de dados (ex: MySQL → MongoDB).
-/// </summary>
-public class BarberApp : ConsoleMenuBase
+public class BarberApp(
+    ClienteConsole clienteConsole,
+    ProfissionalConsole profissionalConsole,
+    AdministradorConsole administradorConsole,
+    CentralCrudConsole crudConsole)
+    : ConsoleMenuBase
 {
-    private readonly IConsoleMenu _clienteConsole;
-    private readonly IConsoleMenu _profissionalConsole;
-    private readonly IConsoleMenu _administradorConsole;
-    private readonly IConsoleMenu _crudConsole;
-
-    private BarberApp(
-        IUsuarioService usuarioService,
-        ICargoService cargoService,
-        IEspecialidadeService especialidadeService,
-        IProfissionalEspecialidadeService profEspService,
-        IServicoService servicoService,
-        IAtendimentoService atendimentoService)
-        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
-    {
-        _clienteConsole = new ClienteConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
-        _profissionalConsole = new ProfissionalConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
-        _administradorConsole = new AdministradorConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
-        _crudConsole = new CentralCrudConsole(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService);
-    }
-
-    /// <summary>
-    /// Cria e executa a aplicação console.
-    /// Usa o Factory Method para instanciar os services de acesso ao banco.
-    /// O banco (MySQL ou MongoDB) é escolhido pelo usuário na inicialização.
-    /// </summary>
     public static async Task RunAsync()
     {
         var configuration = new ConfigurationBuilder()
@@ -46,27 +21,38 @@ public class BarberApp : ConsoleMenuBase
             .AddJsonFile("appsettings.json", optional: false)
             .Build();
 
-        // ===== FACTORY METHOD =====
-        // Seleção do banco em tempo de execução. As duas conexões ficam no appsettings.json.
-        using IDatabaseFactory? factory = CriarFactory(configuration);
-        if (factory is null) return; // usuário optou por sair
+        using var factory = CriarFactory(configuration);
+        if (factory is null)
+            return;
 
-        var app = new BarberApp(
-            factory.CreateUsuarioService(),
-            factory.CreateCargoService(),
-            factory.CreateEspecialidadeService(),
-            factory.CreateProfissionalEspecialidadeService(),
-            factory.CreateServicoService(),
-            factory.CreateAtendimentoService()
-        );
-
+        await using var provider = ConfigurarServicos(configuration, factory);
+        var app = provider.GetRequiredService<BarberApp>();
         await app.ExibirAsync();
     }
 
-    /// <summary>
-    /// Exibe o menu de seleção de banco e cria a IDatabaseFactory correspondente.
-    /// Repete a pergunta se a conexão falhar. Retorna null se o usuário optar por sair.
-    /// </summary>
+    private static ServiceProvider ConfigurarServicos(IConfiguration configuration, IDatabaseFactory factory)
+    {
+        var services = new ServiceCollection();
+
+        services.AddSingleton(configuration);
+        services.AddSingleton(factory);
+
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateUsuarioService());
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateCargoService());
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateEspecialidadeService());
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateProfissionalEspecialidadeService());
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateServicoService());
+        services.AddSingleton(sp => sp.GetRequiredService<IDatabaseFactory>().CreateAtendimentoService());
+
+        services.AddSingleton<ClienteConsole>();
+        services.AddSingleton<ProfissionalConsole>();
+        services.AddSingleton<AdministradorConsole>();
+        services.AddSingleton<CentralCrudConsole>();
+        services.AddSingleton<BarberApp>();
+
+        return services.BuildServiceProvider();
+    }
+
     private static IDatabaseFactory? CriarFactory(IConfiguration configuration)
     {
         while (true)
@@ -74,7 +60,7 @@ public class BarberApp : ConsoleMenuBase
             try { System.Console.Clear(); } catch { }
             System.Console.WriteLine();
             System.Console.WriteLine("  ╔══════════════════════════════════════════════╗");
-            System.Console.WriteLine("  ║  BarberFlow — Seleção de Banco de Dados       ║");
+            System.Console.WriteLine("  ║  BarberFlow — Seleção de Banco de Dados      ║");
             System.Console.WriteLine("  ╚══════════════════════════════════════════════╝");
             System.Console.WriteLine();
             System.Console.WriteLine("  Qual banco de dados deseja utilizar?");
@@ -82,8 +68,7 @@ public class BarberApp : ConsoleMenuBase
             System.Console.WriteLine("  2. MongoDB (driver oficial)");
             System.Console.WriteLine("  0. Sair");
             System.Console.WriteLine();
-            System.Console.Write("  Opção: ");
-            var opcao = System.Console.ReadLine()?.Trim();
+            var opcao = LerOpcao();
 
             try
             {
@@ -121,9 +106,6 @@ public class BarberApp : ConsoleMenuBase
         }
     }
 
-    /// <summary>
-    /// Loop principal do menu da aplicação.
-    /// </summary>
     public override async Task ExibirAsync()
     {
         while (true)
@@ -142,15 +124,20 @@ public class BarberApp : ConsoleMenuBase
             {
                 switch (opcao)
                 {
-                    case "1": await _clienteConsole.ExibirAsync(); break;
-                    case "2": await _profissionalConsole.ExibirAsync(); break;
-                    case "3": await _administradorConsole.ExibirAsync(); break;
-                    case "4": await _crudConsole.ExibirAsync(); break;
+                    case "1": await clienteConsole.ExibirAsync(); break;
+                    case "2": await profissionalConsole.ExibirAsync(); break;
+                    case "3": await administradorConsole.ExibirAsync(); break;
+                    case "4": await crudConsole.ExibirAsync(); break;
                     case "0": return;
                     default: MsgErro("Opção inválida!"); break;
                 }
             });
-            if (opcao == "0") { Msg("Até logo!"); return; }
+
+            if (opcao != "0")
+                continue;
+
+            Msg("Até logo!");
+            return;
         }
     }
 }

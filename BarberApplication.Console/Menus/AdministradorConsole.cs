@@ -3,17 +3,14 @@ using BarberApplication.Console.Services;
 
 namespace BarberApplication.Console.Menus;
 
-public class AdministradorConsole : ConsoleMenuBase
+public class AdministradorConsole(
+    IUsuarioService UsuarioService,
+    IEspecialidadeService EspecialidadeService,
+    IProfissionalEspecialidadeService ProfEspService,
+    IServicoService ServicoService,
+    IAtendimentoService AtendimentoService)
+    : ConsoleMenuBase
 {
-    public AdministradorConsole(
-        IUsuarioService usuarioService,
-        ICargoService cargoService,
-        IEspecialidadeService especialidadeService,
-        IProfissionalEspecialidadeService profEspService,
-        IServicoService servicoService,
-        IAtendimentoService atendimentoService)
-        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService) { }
-
     public override async Task ExibirAsync()
     {
         while (true)
@@ -58,7 +55,7 @@ public class AdministradorConsole : ConsoleMenuBase
                     case "1":  await VerClientes(); break;
                     case "2":  await VerProfissionais(); break;
                     case "3":  await VerEspecialidadesDeProf(); break;
-                    case "4":  await VisualizarServicos(); break;
+                    case "4":  await VisualizarServicos(ServicoService, EspecialidadeService); break;
                     case "5":  await VerAtendimentos(); break;
                     case "6":  await VerEspecialidades(); break;
                     case "7":  await CriarUsuario(3); break;
@@ -410,11 +407,11 @@ public class AdministradorConsole : ConsoleMenuBase
 
             var servicosNoBairro = bairroGroup
                 .GroupBy(a => a.Servico!.Nome)
-                .Select(gs => new 
-                { 
-                    Servico = gs.Key, 
-                    Qtd = gs.Count(), 
-                    TotalFat = gs.Sum(a => a.Servico!.Preco) 
+                .Select(gs => new
+                {
+                    Servico = gs.Key,
+                    Qtd = gs.Count(),
+                    TotalFat = gs.Sum(a => a.Servico!.Preco)
                 })
                 .OrderByDescending(s => s.Qtd)
                 .ToList();

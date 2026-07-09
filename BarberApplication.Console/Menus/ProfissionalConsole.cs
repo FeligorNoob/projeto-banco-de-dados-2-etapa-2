@@ -6,21 +6,15 @@ namespace BarberApplication.Console.Menus;
 /// <summary>
 /// Menu do console para a área do Profissional.
 /// </summary>
-public class ProfissionalConsole : ConsoleMenuBase
+public class ProfissionalConsole(
+    IUsuarioService usuarioService,
+    IEspecialidadeService especialidadeService,
+    IProfissionalEspecialidadeService profEspService,
+    IAtendimentoService atendimentoService)
+    : ConsoleMenuBase
 {
     // Cargo 2 = Profissional
     private const int CargoProfissional = 2;
-
-    public ProfissionalConsole(
-        IUsuarioService usuarioService,
-        ICargoService cargoService,
-        IEspecialidadeService especialidadeService,
-        IProfissionalEspecialidadeService profEspService,
-        IServicoService servicoService,
-        IAtendimentoService atendimentoService)
-        : base(usuarioService, cargoService, especialidadeService, profEspService, servicoService, atendimentoService)
-    {
-    }
 
     public override async Task ExibirAsync()
     {
@@ -30,7 +24,7 @@ public class ProfissionalConsole : ConsoleMenuBase
         var cpf = LerInput("Digite seu CPF (11 dígitos)");
         if (cpf == "0") return;
 
-        var usuarios = (await UsuarioService.GetAllAsync()).ToList();
+        var usuarios = (await usuarioService.GetAllAsync()).ToList();
         var profissional = usuarios.FirstOrDefault(u => u.Cpf == cpf);
 
         if (profissional == null) { MsgErro("CPF não encontrado."); return; }
@@ -74,7 +68,7 @@ public class ProfissionalConsole : ConsoleMenuBase
     {
         LimparConsole();
         Titulo("Atendimentos Agendados");
-        var agendados = (await AtendimentoService.GetAllAsync())
+        var agendados = (await atendimentoService.GetAllAsync())
             .Where(a => a.FkProfissional == profissional.IdUsuario && a.StatusAtendimento == "A")
             .OrderBy(a => a.DataHora).ToList();
 
@@ -91,7 +85,7 @@ public class ProfissionalConsole : ConsoleMenuBase
     {
         LimparConsole();
         Titulo("Todos os meus Atendimentos");
-        var meus = (await AtendimentoService.GetAllAsync())
+        var meus = (await atendimentoService.GetAllAsync())
             .Where(a => a.FkProfissional == profissional.IdUsuario)
             .OrderByDescending(a => a.DataHora).ToList();
 
@@ -108,7 +102,7 @@ public class ProfissionalConsole : ConsoleMenuBase
     {
         LimparConsole();
         Titulo("Marcar Atendimento como Realizado");
-        var agendados = (await AtendimentoService.GetAllAsync())
+        var agendados = (await atendimentoService.GetAllAsync())
             .Where(a => a.FkProfissional == profissional.IdUsuario && a.StatusAtendimento == "A").ToList();
 
         if (agendados.Count == 0) { Msg("Sem atendimentos agendados."); return; }
@@ -120,7 +114,7 @@ public class ProfissionalConsole : ConsoleMenuBase
         if (inIdx == "0") return;
         if (!int.TryParse(inIdx, out int idx) || idx < 1 || idx > agendados.Count) { MsgErro("Opção inválida!"); return; }
 
-        await AtendimentoService.AtualizarStatusAsync(agendados[idx - 1].IdAtendimento, "R");
+        await atendimentoService.AtualizarStatusAsync(agendados[idx - 1].IdAtendimento, "R");
         Msg("Atendimento marcado como realizado!");
     }
 
@@ -128,8 +122,8 @@ public class ProfissionalConsole : ConsoleMenuBase
     {
         LimparConsole();
         Titulo($"Especialidades de {profissional.Nome}");
-        var profEsps = (await ProfEspService.GetAllAsync()).ToList();
-        var especialidades = (await EspecialidadeService.GetAllAsync()).ToList();
+        var profEsps = (await profEspService.GetAllAsync()).ToList();
+        var especialidades = (await especialidadeService.GetAllAsync()).ToList();
 
         var minhasEspIds = profEsps.Where(pe => pe.FkProfissional == profissional.IdUsuario)
                                     .Select(pe => pe.FkEspecialidade).ToHashSet();

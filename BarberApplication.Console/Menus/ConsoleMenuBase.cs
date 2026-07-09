@@ -4,34 +4,10 @@ namespace BarberApplication.Console.Menus;
 
 /// <summary>
 /// Classe abstrata base para todos os menus do console.
-/// Contém os helpers de UI e os services compartilhados.
+/// Contém apenas os helpers de UI compartilhados — não armazena services.
 /// </summary>
 public abstract class ConsoleMenuBase : IConsoleMenu
 {
-    // ==================== Services ====================
-    protected readonly IUsuarioService UsuarioService;
-    protected readonly ICargoService CargoService;
-    protected readonly IEspecialidadeService EspecialidadeService;
-    protected readonly IProfissionalEspecialidadeService ProfEspService;
-    protected readonly IServicoService ServicoService;
-    protected readonly IAtendimentoService AtendimentoService;
-
-    protected ConsoleMenuBase(
-        IUsuarioService usuarioService,
-        ICargoService cargoService,
-        IEspecialidadeService especialidadeService,
-        IProfissionalEspecialidadeService profEspService,
-        IServicoService servicoService,
-        IAtendimentoService atendimentoService)
-    {
-        UsuarioService = usuarioService;
-        CargoService = cargoService;
-        EspecialidadeService = especialidadeService;
-        ProfEspService = profEspService;
-        ServicoService = servicoService;
-        AtendimentoService = atendimentoService;
-    }
-
     /// <summary>
     /// Método principal do menu. Deve ser implementado por cada console concreto.
     /// </summary>
@@ -44,12 +20,12 @@ public abstract class ConsoleMenuBase : IConsoleMenu
     /// <summary>
     /// Limpa o console de forma segura (ignora erros caso o console não suporte clear).
     /// </summary>
-    protected void LimparConsole()
+    protected static void LimparConsole()
     {
         try { System.Console.Clear(); } catch { }
     }
 
-    protected void Titulo(string texto)
+    protected static void Titulo(string texto)
     {
         System.Console.WriteLine();
         System.Console.ForegroundColor = ConsoleColor.Cyan;
@@ -60,14 +36,14 @@ public abstract class ConsoleMenuBase : IConsoleMenu
         System.Console.WriteLine();
     }
 
-    protected void Separador()
+    protected static void Separador()
     {
         System.Console.ForegroundColor = ConsoleColor.DarkGray;
         System.Console.WriteLine("  " + new string('─', 65));
         System.Console.ResetColor();
     }
 
-    protected string LerOpcao()
+    protected static string LerOpcao()
     {
         System.Console.ForegroundColor = ConsoleColor.Cyan;
         System.Console.Write("  ? ");
@@ -76,7 +52,7 @@ public abstract class ConsoleMenuBase : IConsoleMenu
         return System.Console.ReadLine()?.Trim() ?? "";
     }
 
-    protected string LerInput(string mensagem)
+    protected static string LerInput(string mensagem)
     {
         System.Console.ForegroundColor = ConsoleColor.DarkGray;
         System.Console.WriteLine("\n  [Digite 0 para Voltar/Cancelar]");
@@ -86,7 +62,7 @@ public abstract class ConsoleMenuBase : IConsoleMenu
         System.Console.Write($"{mensagem}: ");
         return System.Console.ReadLine()?.Trim() ?? "";
     }
-	protected string LerInputEdicao(string mensagem)
+	protected static string LerInputEdicao(string mensagem)
 	{
 		System.Console.ForegroundColor = ConsoleColor.DarkGray;
 		System.Console.WriteLine("\n  [Digite 0 para Pular este campo]");
@@ -113,14 +89,14 @@ public abstract class ConsoleMenuBase : IConsoleMenu
         Pausar();
     }
 
-    protected void MsgAviso(string texto)
+    protected static void MsgAviso(string texto)
     {
         System.Console.ForegroundColor = ConsoleColor.Yellow;
         System.Console.WriteLine($"\n  ⚠ {texto}");
         System.Console.ResetColor();
     }
 
-    protected void Pausar()
+    protected static void Pausar()
     {
         System.Console.ForegroundColor = ConsoleColor.DarkGray;
         System.Console.Write("\n  Pressione qualquer tecla para continuar...");
@@ -132,7 +108,7 @@ public abstract class ConsoleMenuBase : IConsoleMenu
     /// Exibe aviso de que dados relacionados serão removidos e pede confirmação.
     /// Retorna true se o usuário confirmar (digitar 's').
     /// </summary>
-    protected bool ConfirmarRemocaoComDados(string itemNome, string descricaoDados)
+    protected static bool ConfirmarRemocaoComDados(string itemNome, string descricaoDados)
     {
         System.Console.WriteLine();
         System.Console.ForegroundColor = ConsoleColor.Yellow;
@@ -150,7 +126,7 @@ public abstract class ConsoleMenuBase : IConsoleMenu
     /// <summary>
     /// Converte o código de status do atendimento para texto legível.
     /// </summary>
-    protected string FormatarStatus(string status) => status switch
+    protected static string FormatarStatus(string status) => status switch
     {
         "A" => "Agendado",
         "R" => "Realizado",
@@ -178,14 +154,15 @@ public abstract class ConsoleMenuBase : IConsoleMenu
     }
 
     /// <summary>
-    /// Exibe a listagem de serviços (compartilhado entre Cliente e Admin).
+    /// Exibe a listagem de serviços (compartilhado entre Cliente, Admin e Central de Dados).
+    /// Recebe os services por parâmetro, já que a base não os armazena mais.
     /// </summary>
-    protected async Task VisualizarServicos()
+    protected async Task VisualizarServicos(IServicoService servicoService, IEspecialidadeService especialidadeService)
     {
         LimparConsole();
         Titulo("Serviços Disponíveis");
-        var servicos = (await ServicoService.GetAllAsync()).ToList();
-        var especialidades = (await EspecialidadeService.GetAllAsync()).ToList();
+        var servicos = (await servicoService.GetAllAsync()).ToList();
+        var especialidades = (await especialidadeService.GetAllAsync()).ToList();
 
         if (servicos.Count == 0) { Msg("Nenhum serviço cadastrado."); return; }
 
